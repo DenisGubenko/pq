@@ -1,1 +1,1 @@
-module github.com/DenisGubenko/pq
+module github.com/DenisGubenko/pq_sandbox
