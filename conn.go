@@ -49,7 +49,7 @@ func (d *Driver) Open(name string) (driver.Conn, error) {
 }
 
 func init() {
-	sql.Register("postgres", &Driver{})
+	sql.Register("postgres_sandbox", &Driver{})
 }
 
 type parameterStatus struct {
@@ -536,39 +536,7 @@ func (cn *conn) closeTxn() {
 }
 
 func (cn *conn) Commit() (err error) {
-	defer cn.closeTxn()
-	if cn.bad {
-		return driver.ErrBadConn
-	}
-	defer cn.errRecover(&err)
-
-	cn.checkIsInTransaction(true)
-	// We don't want the client to think that everything is okay if it tries
-	// to commit a failed transaction.  However, no matter what we return,
-	// database/sql will release this connection back into the free connection
-	// pool so we have to abort the current transaction here.  Note that you
-	// would get the same behaviour if you issued a COMMIT in a failed
-	// transaction, so it's also the least surprising thing to do here.
-	if cn.txnStatus == txnStatusInFailedTransaction {
-		if err := cn.rollback(); err != nil {
-			return err
-		}
-		return ErrInFailedTransaction
-	}
-
-	_, commandTag, err := cn.simpleExec("COMMIT")
-	if err != nil {
-		if cn.isInTransaction() {
-			cn.bad = true
-		}
-		return err
-	}
-	if commandTag != "COMMIT" {
-		cn.bad = true
-		return fmt.Errorf("unexpected command tag %s", commandTag)
-	}
-	cn.checkIsInTransaction(false)
-	return nil
+	return cn.Rollback()
 }
 
 func (cn *conn) Rollback() (err error) {
