@@ -536,7 +536,7 @@ func (cn *conn) closeTxn() {
 }
 
 func (cn *conn) Commit() (err error) {
-	return cn.Rollback()
+	return nil
 }
 
 func (cn *conn) Rollback() (err error) {
